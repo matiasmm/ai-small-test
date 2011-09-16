@@ -1,9 +1,9 @@
 <html>
 <head>
-<script src="jquery.js" type="text/javascript"></script>
-<script src="jquery-ui.min.js" type="text/javascript"></script>
+	<script src="jquery.js" type="text/javascript"></script>
+	<script src="jquery-ui.min.js" type="text/javascript"></script>
+	<title>Inteligencia artificial</title>
 </head>
-
 <body>
 <div>
 	<h3>Pasos</h3>
@@ -41,9 +41,6 @@
 
         },
         message: function(data){
-             var startTime = new Date().getTime();
-             while (new Date().getTime() < startTime + 2000);
-
              $('.logger .content').html( $('.logger .content').html() +data + '<br>');
         },
         log: function(event, context){
@@ -171,10 +168,18 @@
                 for(var func_name in robot.skills){
                     var func = robot.skills[func_name];
                     var args = func.getArguments();
-                    var option = $("<option>").bind("click", {'args': args},function(event){
-
-                        var args = event.data.args;
-                        var container = $("#form_arguments");
+                    var option = $("<option>");
+		    option.data('args', args);
+                    option.html(func_name).val(func_name);;
+                    combo_question.append(option);
+                    
+                }
+            }
+            combo_question.bind('change', function(){
+		var args = [];
+		$(this).find(':selected').each(function(){
+			args = $(this).data('args');
+			var container = $("#form_arguments");
                         container.html("");
                         for(var i in args){
                             if(args[i].trim() !== ''){
@@ -186,12 +191,9 @@
 
                             }
                         }
-                    });
-                    option.html(func_name).val(func_name);;
-                    combo_question.append(option);
-                    
-                }
-            }
+		});
+
+	    });
             $("#form_questions").html("").append(combo_question);
 
     };
@@ -213,7 +215,9 @@
             }
         });
 
-        $("#answer").html(Comunity.robots[robot_id].answer(question, args));
+	var a = Comunity.robots[robot_id].answer(question, args);
+	alert(a);
+        $("#answer").html(a);
         return false;
 
     }
@@ -242,14 +246,45 @@
 
 
     var robot2 = Robot({
-        data: {name: 'Pedro', feel_like_teaching: true}, 
+        data: {name: 'Bender', feel_like_teaching: true}, 
         skills: {
-            Sumar: function(nro1, nro2){
+            'Sumar 2 numeros': function(nro1, nro2){
                 return nro1 + nro2;            
             }
         }
     });
     Comunity.addRobot(robot2);
+
+
+    var robot3 = Robot({
+        data: {name: 'R2-D2', feel_like_teaching: true}, 
+        skills: {
+            'repetir una palabra': function(palabra_a_repetir){
+                return palabra_a_repetir;            
+            }
+        }
+    });
+    Comunity.addRobot(robot3);
+
+
+    var robot4 = Robot({
+        data: {name: 'Terminator', feel_like_teaching: true}, 
+        skills: {
+            'Matar a R2-D2': function(){
+		for(var i in Comunity.robots){
+			if(Comunity.robots[i].data.name == 'R2-D2'){
+				delete Comunity.robots[i];
+				Handler.createRobotsCombo();
+				return "R2-D2 asesinado correctamente.";
+			}
+		}
+                return "R2-D2 no se encuentra.";
+            }
+        }
+    });
+    Comunity.addRobot(robot4);
+
+
 
 </script>
 
@@ -295,7 +330,7 @@
       width: 100%;
     }
     .console textarea{
-      width: 300px;
+      width: 500px;
       height: 150px;
     }
     h3{ color: white;}
@@ -319,19 +354,23 @@
 <div class="console">
 <h3> Agregar robot mediante codigo</h3>
 	<div class="content">
-<textarea>var nuevo_robot = Robot({
-  data: {name: 'Nuevo Robot', feel_like_teaching: true}, 
-  skills: {
-      'Decir mi nobre': function(){
-        return this.data.name;
-      }
-  }
-});
-Comunity.addRobot(nuevo_robot);</textarea>
+<textarea>var robot4 = Robot({
+        data: {name: 'Nuevo robot', feel_like_teaching: true}, 
+        skills: {
+            'Calcular una circunferencia dado el radio': function(radio){
+                return 2 * Math.PI * radio;
+            }
+        }
+    });
+    Comunity.addRobot(robot4);</textarea>
 	</div>
 	<div class="buttons"><input type="button" value="Ejecutar" onclick="eval($('.console .content textarea').val()); Handler.createRobotsCombo(); Handler.createQuestionsCombo(); $.ajax({ url: 'file.php', data: $('.console .content textarea').html() })"></div>
 </div>
-
+<hr>
+<div>
+	<h3>Escenario:</h3>
+	<pre>Cada robot sabe resolver un problema en particular y todos tienen la capacidad de aprender de otros. </pre><pre>Si se le pregunta algo que no sabe hacer a un robot, &eacute;ste preguntar&aacute; a algun otro robot si sabe c&oacute;mo resolver el problema y le pedir&aacute; que le explique el procedimiento. </pre><pre>Una vez que esto ocurra, el robot adquiere la habilidad del otro robot y a partir de ah&iacute;, sabe resolver el problema solo.</pre>
+</div>
 
 </body>
 </html>
