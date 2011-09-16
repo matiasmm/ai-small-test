@@ -6,8 +6,9 @@
 </head>
 <body>
 <div>
-	<h3>Pasos</h3>
-	Seleccione un robot y preguntele algo que no sepa resolver mediante el boton 'ask'.
+	<h2>Pasos</h2>
+	Seleccione un robot y preguntele algo que no sepa resolver mediante el boton 'Preguntar'.
+<pre>ejemplo: Preguntele a R2-D2 su nombre.</pre>
 </div>
 
 <script>
@@ -124,7 +125,7 @@
             <div id="form_questions"></div>
             <div id="form_arguments"></div>
 
-            <input type="BUTTON" value="ASK" onclick="$('.logger .content').html('');Handler.formulateQuestion()">
+            <input type="BUTTON" value="Preguntar" onclick="$('.logger .content').html('');Handler.formulateQuestion()">
         </div>
             <div id="form_robots"></div>
 
@@ -339,7 +340,11 @@
  color: blue;
  font: 15px;
  font-weight: bold;
+padding: 10px;
+border: 1px solid green;
 }
+
+	.logger .content{ background-color: #EEE; color: black; font-weight: bold; padding: 10px;}
 </style>
 
 <div style="clear: both"></div>
