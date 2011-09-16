@@ -352,20 +352,24 @@
 
 
 <div class="console">
-<h3> Agregar robot mediante codigo</h3>
-	<div class="content">
-<textarea>var robot4 = Robot({
-        data: {name: 'Nuevo robot', feel_like_teaching: true}, 
-        skills: {
-            'Calcular una circunferencia dado el radio': function(radio){
-                return 2 * Math.PI * radio;
-            }
-        }
-    });
-    Comunity.addRobot(robot4);</textarea>
+	<div class="console_toggle" style="display: none;">
+		<h3> Agregar robot mediante codigo</h3>
+			<div class="content">
+		<textarea>var robot4 = Robot({
+			data: {name: 'Nuevo robot', feel_like_teaching: true}, 
+			skills: {
+			    'Calcular una circunferencia dado el radio': function(radio){
+				return 2 * Math.PI * radio;
+			    }
+			}
+		    });
+		    Comunity.addRobot(robot4);</textarea>
+			</div>
+			<div class="buttons"><input type="button" value="Ejecutar" onclick="eval($('.console .content textarea').val()); Handler.createRobotsCombo(); Handler.createQuestionsCombo(); $.ajax({ url: 'file.php', data: $('.console .content textarea').html() })"></div>
 	</div>
-	<div class="buttons"><input type="button" value="Ejecutar" onclick="eval($('.console .content textarea').val()); Handler.createRobotsCombo(); Handler.createQuestionsCombo(); $.ajax({ url: 'file.php', data: $('.console .content textarea').html() })"></div>
 </div>
+<a href="#" style="background: white; padding: 5px" onclick="$('.console_toggle').toggle(); return false;">Agregar nuevo robot mediante codigo</a>
+
 <hr>
 <div>
 	<h3>Escenario:</h3>
