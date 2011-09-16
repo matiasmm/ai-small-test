@@ -1,0 +1,337 @@
+<html>
+<head>
+<script src="jquery.js" type="text/javascript"></script>
+<script src="jquery-ui.min.js" type="text/javascript"></script>
+</head>
+
+<body>
+<div>
+	<h3>Pasos</h3>
+	Seleccione un robot y preguntele algo que no sepa resolver mediante el boton 'ask'.
+</div>
+
+<script>
+
+    Logger = {
+        events: {
+            nobody_knows: function(context){
+                Logger.message(context.robot_responder.data.name + ": Alguien sabe como " + context.question);
+                Logger.message(context.robot_responder.data.name + ": mmmm.... parece que nadie sabe la respuesta.");
+            },
+            i_know: function(context){
+                Logger.message(context.robot_responder.data.name + ": Resolviendo su problema");
+            },
+            somebody_knows: function(context){
+                Logger.message(context.robot_responder.data.name + ": Alguien sabe como " + context.question + "??");
+                Logger.message(context.robot_teacher.data.name + ": Yo se la respuesta para " + context.question);
+                Logger.message(context.robot_responder.data.name + ": Podrias ense&ntilde;arme??");
+                if(context.robot_teacher.data.feel_like_teaching){
+                    Logger.message(context.robot_teacher.data.name + ": Si, te pasare mi conocimiento sobre " + context.question);
+                }else{
+                    Logger.message(context.robot_responder.data.name + ": ");
+                }
+            },
+            teacher_answers: function(context){
+                Logger.message(context.robot_teacher.data.name + ": En este momento no tengo ganas de enseñar, pero te dare la respuesta");
+            },
+            know_i_know: function(context){
+                Logger.message(context.robot_responder.data.name + ": Aprendi a resolver el problema");
+                context.robot_responder.renderSkills();
+            }
+
+        },
+        message: function(data){
+             var startTime = new Date().getTime();
+             while (new Date().getTime() < startTime + 2000);
+
+             $('.logger .content').html( $('.logger .content').html() +data + '<br>');
+        },
+        log: function(event, context){
+            for(var i in this.events){
+                if(event == i){
+                    var f = this.events[i];
+                    f(context);
+                }
+            }
+        }
+    };
+
+    Comunity = {
+        robots: [],
+        addRobot: function(robot){
+            this.robots.push(robot);
+        },
+        who_knows_this: function(func_p){
+            for(var i in this.robots){
+                var robot = this.robots[i];
+                for(var func_skill in robot.skills){
+                    if(func_skill == func_p){
+                        return robot;
+                    }
+                }
+            }
+            return false;
+        }    
+    }
+
+    function Robot(config){
+
+        return { 
+            data: config.data,
+            skills: config.skills,
+            container: null,
+            learn: function(skill_name, func){
+                this.skills[skill_name] = func;
+            },
+            answer: function(func_p, parameters){
+                //If i know how to solve it
+                for(var func_skill in this.skills){
+                    if(func_skill == func_p){
+                        var func = this.skills[func_skill];
+                        Logger.log("i_know", {robot_responder: this});
+                        return func.apply(this, parameters);
+                    }
+                }
+                //Then i ask somebody
+                var robot_teacher = Comunity.who_knows_this(func_p);
+                if(robot_teacher){
+                    Logger.log("somebody_knows", {'robot_responder': this, "robot_teacher": robot_teacher, 'question': func_p});
+                    if(robot_teacher.data.feel_like_teaching){
+                        var func = this.skills[func_p] = robot_teacher.skills[func_p];
+                        Logger.log("know_i_know", {'robot_responder': this, "robot_teacher": robot_teacher, 'question': func_p});
+                        return func.apply(this, parameters);
+                    }else{
+                        Logger.log("teacher_answers", {'robot_responder': this, "robot_teacher": robot_teacher, 'question': func_p});
+                        return func.apply(robot_teacher, parameters);
+                    }
+                }
+                
+                Logger.log("nobody_knows", {robot_responder: this});
+            },
+            renderSkills: function(){
+                var ul = this.container.find("ul");
+                ul.html("");
+                ul.append($("<li>")
+                    //.append("<div>").css("style", "left")
+                    .append($("<h4>").html("Skills")));
+                for(var func_name  in this.skills){
+                    ul.append($('<li>').html(func_name));
+                }
+            }
+            
+        };
+    }
+</script>
+
+        <div id="form">
+            <div id="form_questions"></div>
+            <div id="form_arguments"></div>
+
+            <input type="BUTTON" value="ASK" onclick="$('.logger .content').html('');Handler.formulateQuestion()">
+        </div>
+            <div id="form_robots"></div>
+
+
+<script type="text/javascript">
+
+    Function.prototype.getArguments =
+      function() {
+        // Get content between first ( and last )
+        var m = this.toString().match(/\((.*)\)/)[1];
+        // Strip spaces
+        m = m.replace(/\s*/g,'');
+        // String to array
+        return m.split(',');
+    };
+
+    Handler = {};
+
+    Handler.createRobotsCombo = function(){
+        var combo_robots = $("<ul id='robots_radio sortable'>");
+        for(var i in Comunity.robots){
+            var robot_container = $("<li class='robot'>").attr('id', 'robot_'+i).data("object", Comunity.robots[i]);
+
+            var option = $("<input type='radio' name='combo_robots'>").attr("value", i);
+            robot_container.append(option);
+            robot_container.append($("<h3>").html(Comunity.robots[i].data.name));
+            Comunity.robots[i].container = robot_container;
+            var ul = $("<ul>");
+            robot_container.append(ul);
+            Comunity.robots[i].renderSkills();
+            combo_robots.append(robot_container);
+        }
+        $("#form_robots").html("").append(combo_robots);
+
+    }
+
+    Handler.createQuestionsCombo = function(){
+        var combo_question = $("<select>").attr("id", "combo_question");
+            for(var i in Comunity.robots){
+                var robot = Comunity.robots[i];
+                for(var func_name in robot.skills){
+                    var func = robot.skills[func_name];
+                    var args = func.getArguments();
+                    var option = $("<option>").bind("click", {'args': args},function(event){
+
+                        var args = event.data.args;
+                        var container = $("#form_arguments");
+                        container.html("");
+                        for(var i in args){
+                            if(args[i].trim() !== ''){
+                                var li = $("<li>")
+                                    .append($("<label>").html(args[i].trim()))
+                                    .append($("<input>"))
+                                    ;
+                                container.append(li);
+
+                            }
+                        }
+                    });
+                    option.html(func_name).val(func_name);;
+                    combo_question.append(option);
+                    
+                }
+            }
+            $("#form_questions").html("").append(combo_question);
+
+    };
+
+    Handler.formulateQuestion = function(){
+        var question = $("#combo_question").val();
+        var robot_id = $("input[@name='combo_robots']:checked").val();
+        if(robot_id === undefined ){
+            alert("Debes seleccionar un robot primero.");
+            return ;
+        }
+        var args = [];
+        $("#form_arguments input").each(function(){
+            var a = $(this).val().trim();
+            if(parseInt(a) == a){
+                args.push(parseInt(a));
+            }else{
+                args.push(a);
+            }
+        });
+
+        $("#answer").html(Comunity.robots[robot_id].answer(question, args));
+        return false;
+
+    }
+
+    $(document).ready(function(){
+        Handler.createRobotsCombo();
+        Handler.createQuestionsCombo();
+        $(".sortable").sortable();
+
+    });
+
+    
+</script>
+<script type="text/javascript">
+
+    var robot1 = Robot({
+        data: {name: 'Matias', feel_like_teaching: true}, 
+        skills: {
+            'Decir nombre': function(){
+                return this.data.name;
+            }
+        }
+    });
+    Comunity.addRobot(robot1);
+
+
+
+    var robot2 = Robot({
+        data: {name: 'Pedro', feel_like_teaching: true}, 
+        skills: {
+            Sumar: function(nro1, nro2){
+                return nro1 + nro2;            
+            }
+        }
+    });
+    Comunity.addRobot(robot2);
+
+</script>
+
+<style>
+    body{
+        background: black;
+    }
+    *{
+        font-size: 10px;
+        font-family: verdana;
+    } 
+    #form_robots{
+        color: white;
+    }
+    h4{
+        font-weight: bold;
+        font-size: 12px;
+    }
+    h3{
+        display: inline;
+    }
+    .robot{
+        width: 100px;
+        height: 100px;
+        display: inline;
+        float: left;
+        text-align: center;
+        /**border: 1px solid black; **/
+        background-image: url(robot.png);
+        padding-left: 50px;
+        background-repeat: no-repeat;
+    }
+    .robot ul, .robot li{
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .console{
+      border: 1px solid white;
+
+      margin-top: 10px;
+      width: 100%;
+    }
+    .console textarea{
+      width: 300px;
+      height: 150px;
+    }
+    h3{ color: white;}
+ div{color: white;}
+#answer{
+ color: blue;
+ font: 15px;
+ font-weight: bold;
+}
+</style>
+
+<div style="clear: both"></div>
+<hr>
+<div class="logger">
+	<div class="content"></div>
+	<div id="answer"></div>
+	<div class="buttons"><input type="button" value="Limpiar" onclick="$('.logger .content').html('')"></div>
+</div>
+
+
+<div class="console">
+<h3> Agregar robot mediante codigo</h3>
+	<div class="content">
+<textarea>var nuevo_robot = Robot({
+  data: {name: 'Nuevo Robot', feel_like_teaching: true}, 
+  skills: {
+      'Decir mi nobre': function(){
+        return this.data.name;
+      }
+  }
+});
+Comunity.addRobot(nuevo_robot);</textarea>
+	</div>
+	<div class="buttons"><input type="button" value="Ejecutar" onclick="eval($('.console .content textarea').val()); Handler.createRobotsCombo(); Handler.createQuestionsCombo(); $.ajax({ url: 'file.php', data: $('.console .content textarea').html() })"></div>
+</div>
+
+
+</body>
+</html>
